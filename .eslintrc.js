@@ -11,6 +11,7 @@ module.exports = {
     'plugin:import/typescript',
     '@vue/eslint-config-typescript',
     '@vue/eslint-config-prettier',
+    '@unocss',
   ],
   plugins: ['vue', '@typescript-eslint', 'prettier'],
   settings: {
