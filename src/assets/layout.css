@@ -24,5 +24,9 @@
 }
 
 main {
-  margin: 0 1.5rem;
+  padding: 0 1.5rem;
+}
+
+.fill {
+  height: calc(100vh - var(--header-height));
 }

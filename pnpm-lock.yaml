@@ -24,6 +24,9 @@ devDependencies:
   '@tsconfig/node18':
     specifier: ^2.0.1
     version: 2.0.1
+  '@types/fabric':
+    specifier: ^5.3.3
+    version: 5.3.3
   '@types/jsdom':
     specifier: ^21.1.1
     version: 21.1.1
@@ -556,6 +559,10 @@ packages:
 
   /@types/estree@1.0.1:
     resolution: {integrity: sha512-LG4opVs2ANWZ1TJoKc937iMmNstM/d0ae1vNbnBvBhqCSezgVUOzcLCqbI5elV8Vy6WKwKjaqR+zO9VKirBBCA==}
+    dev: true
+
+  /@types/fabric@5.3.3:
+    resolution: {integrity: sha512-O+lGsf5MXhkr4CZhZBE2foxIU1yZklTwhmZxFbTeBNWEqrvwGeq4c8TWJBKAqiISYRu7bDIMLZUPacFodbVD0g==}
     dev: true
 
   /@types/jsdom@21.1.1:

@@ -29,6 +29,13 @@ module.exports = {
         '@typescript-eslint/no-unused-vars': 'off',
       },
     },
+    {
+      files: ['*.ts'],
+      rules: {
+        'no-unused-vars': 'off',
+        'no-undef': 'off',
+      },
+    },
   ],
   parserOptions: {
     sourceType: 'module',

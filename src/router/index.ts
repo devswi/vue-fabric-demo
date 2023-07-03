@@ -14,9 +14,9 @@ const router = createRouter({
           component: () => import('../pages/HomePage.vue'),
         },
         {
-          path: 'drawer',
-          name: 'drawer',
-          component: () => import('../pages/DrawerPage.vue'),
+          path: 'drawing',
+          name: 'drawing',
+          component: () => import('../pages/DrawingPage.vue'),
         },
       ],
     },

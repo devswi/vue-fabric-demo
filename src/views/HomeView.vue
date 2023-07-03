@@ -10,7 +10,7 @@ useDark()
       <h1 mr-8 font-bold>Fabric</h1>
       <nav flex space-x-4>
         <RouterLink link to="/">Home</RouterLink>
-        <RouterLink link to="/drawer">Drawer</RouterLink>
+        <RouterLink link to="/drawing">Drawing</RouterLink>
       </nav>
     </header>
     <main>
