@@ -5,6 +5,8 @@ enum DrawingMode {
   Line,
   Rectangle,
   Oval,
+  Triangle,
+  Polyline,
   Text,
 }
 

@@ -1,6 +1,12 @@
 import { fabric } from 'fabric'
+import { markRaw } from 'vue'
 import { DrawingMode, CursorMode, type Drawer } from './Drawer'
 import LineDrawer from './LineDrawer'
+import RectangleDrawer from './RectangleDrawer'
+import OvalDrawer from './OvalDrawer'
+import TriangleDrawer from './TriangleDrawer'
+import PolylineDrawer from './PolylineDrawer'
+import HistoryManager from './HistoryManager'
 
 /**
  * @class DrawingEditor 绘图类
@@ -11,16 +17,27 @@ class DrawingEditor {
   readonly drawerOptions: fabric.IObjectOptions = {}
 
   private _drawer: Drawer
-  // 所有绘制器
-  private readonly drawers: Drawer[] = [new LineDrawer()]
+
+  // 支持绘制器集合
+  private readonly drawers: { [k in DrawingMode]?: Drawer } = {
+    [DrawingMode.Line]: new LineDrawer(),
+    [DrawingMode.Rectangle]: new RectangleDrawer(),
+    [DrawingMode.Oval]: new OvalDrawer(),
+    [DrawingMode.Triangle]: new TriangleDrawer(),
+    [DrawingMode.Polyline]: new PolylineDrawer(),
+  }
+
   // 当前绘制对象
   private object?: fabric.Object
 
   // 是否正在绘制
-  private isDrawing: boolean = false
+  private isDrawing = false
 
   // 光标类型
-  private cursorMode: CursorMode = CursorMode.Draw
+  private cursorMode = CursorMode.Draw
+
+  // 操作历史
+  private history: HistoryManager
 
   /**
    * @constructor DrawingEditor 构造函数
@@ -40,13 +57,20 @@ class DrawingEditor {
     canvasEl.height = height
     canvas.replaceWith(canvasEl)
     // create fabric.Canvas object
-    this.canvas = new fabric.Canvas(selector, {
-      height,
+    const canvasObject = new fabric.Canvas(selector, {
       width,
+      height,
       selection: false,
     })
 
-    this._drawer = this.drawers[DrawingMode.Line]
+    this.canvas = markRaw(canvasObject)
+    this.history = new HistoryManager(this.canvas)
+
+    // set default drawer
+    const defaultDrawers = this.drawers[DrawingMode.Rectangle]
+    if (defaultDrawers) {
+      this._drawer = defaultDrawers
+    }
     this.drawerOptions = {
       stroke: 'black',
       strokeWidth: 1,
@@ -55,6 +79,18 @@ class DrawingEditor {
     }
 
     this.initializeCanvasEvents()
+  }
+
+  undo() {
+    this.history.undo()
+  }
+
+  redo() {
+    this.history.redo()
+  }
+
+  private save() {
+    this.history.saveState()
   }
 
   /**
@@ -76,7 +112,12 @@ class DrawingEditor {
     // 鼠标释放事件
     this.canvas.on('mouse:up', () => {
       this.isDrawing = false
+      if (this.cursorMode === CursorMode.Draw) {
+        this.save()
+      }
     })
+    //
+    this.canvas.on('mouse:out', () => {})
     // 对象选中事件
     // v4 break change - remove object:selected event
     this.canvas.on('selection:created', (event) => {
@@ -86,6 +127,10 @@ class DrawingEditor {
     // 对象取消选中事件
     this.canvas.on('selection:cleared', () => {
       this.cursorMode = CursorMode.Draw
+    })
+    // 对象变更
+    this.canvas.on('object:modified', () => {
+      this.save()
     })
   }
 
