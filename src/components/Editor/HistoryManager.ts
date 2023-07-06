@@ -1,4 +1,5 @@
 import { fabric } from 'fabric'
+import { PROPERTIES_TO_INCLUDE } from './types'
 
 /**
  * 操作记录管理
@@ -63,7 +64,8 @@ class HistoryManager {
   }
 
   private updateState() {
-    this.currentState = JSON.stringify(this.canvas.toDatalessJSON(['selectionBackgroundColor']))
+    console.log('updateState', this.canvas.toDatalessJSON(PROPERTIES_TO_INCLUDE))
+    this.currentState = JSON.stringify(this.canvas.toDatalessJSON(PROPERTIES_TO_INCLUDE))
   }
 }
 

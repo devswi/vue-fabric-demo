@@ -18,15 +18,6 @@
   color: var(--color-text);
 }
 
-.common-section {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-main {
-  padding: 0 1.5rem;
-}
-
 .fill {
-  height: calc(100vh - var(--header-height));
+  height: 100vh;
 }

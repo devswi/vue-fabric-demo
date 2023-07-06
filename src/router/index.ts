@@ -13,11 +13,6 @@ const router = createRouter({
           name: 'home',
           component: () => import('../pages/HomePage.vue'),
         },
-        {
-          path: 'drawing',
-          name: 'drawing',
-          component: () => import('../pages/DrawingPage.vue'),
-        },
       ],
     },
   ],

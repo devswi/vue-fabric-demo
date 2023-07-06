@@ -7,6 +7,8 @@ import OvalDrawer from './OvalDrawer'
 import TriangleDrawer from './TriangleDrawer'
 import PolylineDrawer from './PolylineDrawer'
 import HistoryManager from './HistoryManager'
+import Copier from './Copier'
+import ShortcutManager, { type ShortcutAction } from './ShortcutManager'
 
 /**
  * @class DrawingEditor 绘图类
@@ -16,7 +18,12 @@ class DrawingEditor {
 
   readonly drawerOptions: fabric.IObjectOptions = {}
 
-  private _drawer: Drawer
+  // 操作历史
+  readonly history: HistoryManager
+
+  private _drawer?: Drawer
+
+  private _image?: fabric.Image
 
   // 支持绘制器集合
   private readonly drawers: { [k in DrawingMode]?: Drawer } = {
@@ -36,8 +43,11 @@ class DrawingEditor {
   // 光标类型
   private cursorMode = CursorMode.Draw
 
-  // 操作历史
-  private history: HistoryManager
+  // 快捷键管理
+  private shortcutManager: ShortcutManager
+
+  // 拷贝
+  private copier: Copier
 
   /**
    * @constructor DrawingEditor 构造函数
@@ -67,18 +77,21 @@ class DrawingEditor {
     this.history = new HistoryManager(this.canvas)
 
     // set default drawer
-    const defaultDrawers = this.drawers[DrawingMode.Rectangle]
-    if (defaultDrawers) {
-      this._drawer = defaultDrawers
-    }
+    this._drawer = this.drawers[DrawingMode.Rectangle]
     this.drawerOptions = {
       stroke: 'black',
       strokeWidth: 1,
-      selectable: true,
       strokeUniform: true,
+      selectable: true,
+      noScaleCache: false,
+      lockRotation: true,
     }
 
+    this.shortcutManager = new ShortcutManager()
+    this.copier = new Copier(this)
+
     this.initializeCanvasEvents()
+    this.initializeShortcutEvents()
   }
 
   undo() {
@@ -89,7 +102,36 @@ class DrawingEditor {
     this.history.redo()
   }
 
-  private save() {
+  deleteCurrent() {
+    const obj = this.canvas.getActiveObject()
+    if (obj) {
+      this.canvas.remove(obj)
+      this.canvas.renderAll()
+      this.saveState()
+    }
+  }
+
+  /**
+   * 设置背景图片
+   */
+  setBackgroundImage(url: string) {
+    this._image = fabric.Image.fromURL(url, (img) => {
+      const { width = 0, height = 0 } = img
+      const { width: canvasWidth = 0, height: canvasHeight = 0 } = this.canvas
+      const scaleRatio = Math.min(canvasWidth / width, canvasHeight / height)
+      // 背景图片居中
+      this.canvas.setBackgroundImage(url, this.canvas.renderAll.bind(this.canvas), {
+        scaleX: scaleRatio,
+        scaleY: scaleRatio,
+        left: canvasWidth / 2,
+        top: canvasHeight / 2,
+        originX: 'middle',
+        originY: 'middle',
+      })
+    })
+  }
+
+  private saveState() {
     this.history.saveState()
   }
 
@@ -113,7 +155,7 @@ class DrawingEditor {
     this.canvas.on('mouse:up', () => {
       this.isDrawing = false
       if (this.cursorMode === CursorMode.Draw) {
-        this.save()
+        this.saveState()
       }
     })
     //
@@ -130,7 +172,44 @@ class DrawingEditor {
     })
     // 对象变更
     this.canvas.on('object:modified', () => {
-      this.save()
+      this.saveState()
+    })
+    // 鼠标滚轮事件
+    this.canvas.on('mouse:wheel', (opt) => {
+      const { e } = opt
+      const delta = e.deltaY
+      let zoom = this.canvas.getZoom()
+      zoom *= 0.999 ** delta
+      if (zoom > 20) zoom = 20
+      if (zoom < 0.01) zoom = 0.01
+      this.canvas.zoomToPoint({ x: e.offsetX, y: e.offsetY }, zoom)
+      e.preventDefault()
+      e.stopPropagation()
+    })
+  }
+
+  private initializeShortcutEvents() {
+    this.shortcutManager.on((action: ShortcutAction) => {
+      switch (action) {
+        case 'undo':
+          this.undo()
+          break
+        case 'redo':
+          this.redo()
+          break
+        case 'copy':
+          this.copier.copy()
+          break
+        case 'paste':
+          this.copier.paste()
+          break
+        case 'cut':
+          this.copier.cut()
+          break
+        case 'delete':
+          this.deleteCurrent()
+          break
+      }
     })
   }
 
@@ -143,20 +222,27 @@ class DrawingEditor {
     if (this.cursorMode !== CursorMode.Draw) return
 
     this.object = await this.make(x, y)
-    this.canvas.add(this.object)
-    this.canvas.renderAll()
+    if (this.object) {
+      this.canvas.add(this.object)
+      this.canvas.renderAll()
+    }
   }
 
   private async mouseMove(x: number, y: number) {
     if (!(this.cursorMode === CursorMode.Draw && this.isDrawing)) return
     if (this.object) {
-      this._drawer.resize(this.object, x, y)
+      this._drawer?.resize(this.object, x, y)
       this.canvas.renderAll()
     }
   }
 
-  private async make(x: number, y: number): Promise<fabric.Object> {
+  private async make(x: number, y: number): Promise<fabric.Object | undefined> {
+    if (!this._drawer) return
     return await this._drawer.make(x, y, this.drawerOptions)
+  }
+
+  private mouseWheel(x: number, y: number, delta: number) {
+    console.log('mouseWheel', x, y, delta)
   }
 }
 
