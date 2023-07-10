@@ -20,6 +20,12 @@ class HistoryManager {
     this.redoStack = []
   }
 
+  reset() {
+    this.undoStack = []
+    this.redoStack = []
+    this.updateState()
+  }
+
   saveState() {
     if (this.locked) return
     if (this.undoStack.length === this.maxCount) {
@@ -40,16 +46,15 @@ class HistoryManager {
     this.replay(this.undoStack, this.redoStack, callback)
   }
 
-  private replay(inStack: string[], outStack: string[], callback?: Function) {
+  private replay(input: string[], output: string[], callback?: Function) {
     // 当前状态入栈
-    inStack.push(this.currentState)
+    input.push(this.currentState)
 
-    const newState = outStack.pop()
+    const newState = output.pop()
     if (!newState) return
     this.currentState = newState // 保存新状态
 
     this.locked = true
-    // this.canvas.clear()
     // 加载新状态
     this.canvas.loadFromJSON(this.currentState, () => {
       if (callback !== undefined) {
@@ -61,7 +66,8 @@ class HistoryManager {
   }
 
   private updateState() {
-    this.currentState = JSON.stringify(this.canvas.toJSON(PROPERTIES_TO_INCLUDE))
+    const json = this.canvas.toDatalessJSON(PROPERTIES_TO_INCLUDE)
+    this.currentState = JSON.stringify(json)
   }
 }
 

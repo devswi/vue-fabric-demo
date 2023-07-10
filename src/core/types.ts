@@ -5,6 +5,10 @@ const PROPERTIES_TO_INCLUDE = [
   'selectable',
   'hasControls',
   'id',
+  'noScaleCache',
 ]
 
-export { PROPERTIES_TO_INCLUDE }
+const WORKSPACE_ID = 'workspace'
+const ANNOTATION_ID = 'annotation'
+
+export { PROPERTIES_TO_INCLUDE, WORKSPACE_ID, ANNOTATION_ID }

@@ -1,18 +1,25 @@
 import { fabric } from 'fabric'
 import { throttle } from 'lodash'
+import { WORKSPACE_ID } from '../types'
 import type { WorkspaceOption } from './types'
 
 class Workspace {
   workspace: fabric.Object | null
   option: WorkspaceOption
 
-  constructor(readonly canvas: fabric.Canvas, readonly workspaceEl: HTMLElement) {
+  constructor(
+    readonly canvas: fabric.Canvas,
+    readonly workspaceEl: HTMLElement,
+    option?: WorkspaceOption,
+  ) {
     this.workspace = null
     this.option = {
-      width: 0,
-      height: 0,
+      width: 1280,
+      height: 1080,
+      ...option,
     }
     this.initResizeObserve()
+    this.addWorkspace()
   }
 
   /**
@@ -36,6 +43,23 @@ class Workspace {
       this.canvas.requestRenderAll()
     })
     callback?.(this.workspace.left, this.workspace.top)
+  }
+
+  private addWorkspace() {
+    const { width, height } = this.option
+    const workspace = new fabric.Rect({
+      fill: '#fff',
+      width,
+      height,
+      id: WORKSPACE_ID,
+      selectable: false,
+      hasControls: false,
+      hoverCursor: 'default',
+    })
+    this.canvas.add(workspace)
+    this.canvas.renderAll()
+    this.workspace = workspace
+    this.auto()
   }
 
   private getScaleRatio() {

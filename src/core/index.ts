@@ -1,10 +1,12 @@
 import { fabric } from 'fabric'
 import { markRaw } from 'vue'
+import { ANNOTATION_ID } from './types'
 import DragEvent from './Event/DragEvent'
-import ShortcutManager from './Event/ShortcutManager'
-import HistoryManager from './Event/HistoryManager'
+import ShortcutManager from './Manager/ShortcutManager'
+import HistoryManager from './Manager/HistoryManager'
+import Copier from './Manager/Copier'
 import { RectangleDrawer, DrawingMode, type Drawer } from './Drawer'
-import { Workspace, AnnotationWorkspace, BlankWorkspace, type WorkspaceOption } from './Workspace'
+import { Workspace, type WorkspaceOption } from './Workspace'
 
 enum EditorState {
   Drawing,
@@ -40,6 +42,8 @@ class Editor {
   // 操作历史
   private history: HistoryManager
 
+  private copier: Copier
+
   private readonly drawers: { [k in DrawingMode]?: Drawer } = {
     [DrawingMode.Rectangle]: new RectangleDrawer(),
   }
@@ -58,6 +62,8 @@ class Editor {
       fireRightClick: false,
       controlsAboveOverlay: true,
       stopContextMenu: true,
+      hoverCursor: 'default',
+      moveCursor: 'default',
     })
     this.canvas = markRaw(_canvas)
 
@@ -67,11 +73,15 @@ class Editor {
     }
     this.workspaceEl = workspaceEl as HTMLElement
     this.setupWorkspace()
-    this.initializeListenerEvent()
-    this.initializeShortcutEvents()
-    this.dragEvent = new DragEvent(this.canvas)
+
     // 创建工作区之后，初始化历史记录
     this.history = new HistoryManager(this.canvas)
+    this.dragEvent = new DragEvent(this.canvas)
+
+    this.initializeListenerEvent()
+    this.initializeShortcutEvents()
+
+    this.copier = new Copier(this)
   }
 
   /**
@@ -82,21 +92,33 @@ class Editor {
   createWorkspace(option: string): void
   createWorkspace(option: WorkspaceOption): void
   createWorkspace(option: WorkspaceOption | string) {
-    // create workspace
+    // 图片 workspace
     if (typeof option === 'string') {
-      this.workspace = new AnnotationWorkspace(this.canvas, this.workspaceEl, option)
+      // 图片加载完成之后，自动缩放
+      fabric.Image.fromURL(option, (img) => {
+        const { width = 0, height = 0 } = img
+        const workspace = new Workspace(this.canvas, this.workspaceEl, {
+          width,
+          height,
+        })
+        img.set({
+          width,
+          height,
+          selectable: false,
+          hasControls: false,
+          hoverCursor: 'default',
+          id: ANNOTATION_ID,
+        })
+
+        this.canvas.add(img)
+        this.workspace = workspace
+        this.workspace.auto()
+        this.history.reset()
+      })
     } else {
-      this.workspace = new BlankWorkspace(this.canvas, this.workspaceEl, option)
+      this.workspace = new Workspace(this.canvas, this.workspaceEl, option)
+      this.history.reset()
     }
-  }
-
-  addImage(url: string) {
-    fabric.Image.fromURL(url, (img) => {
-      img.set({})
-
-      this.canvas.add(img)
-      this.canvas.renderAll()
-    })
   }
 
   // 绘制矩形
@@ -127,6 +149,20 @@ class Editor {
   // 切换拖动模式
   toggleDragMode() {
     this.dragEvent.toggleDragMode()
+  }
+
+  // 删除选中的对象
+  delete() {
+    const obj = this.canvas.getActiveObjects()
+    if (obj) {
+      this.canvas.remove(...obj)
+      this.canvas.discardActiveObject()
+      this.canvas.renderAll()
+    }
+  }
+
+  saveState() {
+    this.history.saveState()
   }
 
   private setupWorkspace() {
@@ -167,14 +203,10 @@ class Editor {
     })
 
     this.canvas.on('mouse:up', (opt) => {
-      console.log('mouse:up', opt)
-      this.isDrawing = false
+      this.mouseUp(opt.e)
     })
 
-    this.canvas.on('object:added', (opt) => {
-      console.log('object:added', opt)
-      // this.saveState()
-    })
+    this.canvas.on('object:added', (_opt) => {})
 
     this.canvas.on('selection:created', () => {
       this.state = EditorState.Selected
@@ -203,7 +235,7 @@ class Editor {
           this.rectangle()
           break
         case 'delete':
-          this.deleteCurrent()
+          this.delete()
           break
         case 'select':
           this.resetDrawer()
@@ -214,17 +246,17 @@ class Editor {
         case 'redo':
           this.redo()
           break
+        case 'cut':
+          this.copier.cut()
+          break
+        case 'paste':
+          this.copier.paste()
+          break
+        case 'copy':
+          this.copier.copy()
+          break
       }
     })
-  }
-
-  private deleteCurrent() {
-    const obj = this.canvas.getActiveObjects()
-    if (obj) {
-      this.canvas.remove(...obj)
-      this.canvas.discardActiveObject()
-      this.canvas.renderAll()
-    }
   }
 
   private setDrawer(mode: DrawingMode) {
@@ -232,8 +264,11 @@ class Editor {
       this.resetDrawer()
       return
     }
-    this.state = EditorState.Drawing
+    // 取消选中
+    this.canvas.discardActiveObject()
+    this.canvas.requestRenderAll()
     this.canvas.selection = false
+    this.state = EditorState.Drawing
     this._drawer = this.drawers[mode]
   }
 
@@ -254,8 +289,19 @@ class Editor {
       this.object = object
       this.canvas.add(object)
       this.canvas.renderAll()
+    }
+  }
+
+  private async mouseUp(_e: MouseEvent) {
+    if (this.state !== EditorState.Drawing) return
+    if (!this.object) return
+    // 当前对象为脏数据，删除
+    if (this.object.dirty) {
+      this.canvas.remove(this.object)
+    } else if (this.isDrawing) {
       this.saveState()
     }
+    this.isDrawing = false
   }
 
   private async mouseMove(x: number, y: number) {
@@ -268,10 +314,6 @@ class Editor {
   private async make(x: number, y: number): Promise<fabric.Object | undefined> {
     if (!this._drawer) return
     return await this._drawer.make(x, y, this.defaultDrawerOptions)
-  }
-
-  private saveState() {
-    this.history.saveState()
   }
 }
 

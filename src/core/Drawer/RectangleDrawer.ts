@@ -1,6 +1,6 @@
 import { fabric } from 'fabric'
 import type { Drawer } from './Base'
-import { DrawingMode } from '@/components/Editor'
+import { DrawingMode } from './Base'
 
 class RectangleDrawer implements Drawer {
   drawing = DrawingMode.Rectangle
