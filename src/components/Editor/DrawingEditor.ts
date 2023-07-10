@@ -6,7 +6,6 @@ import RectangleDrawer from './RectangleDrawer'
 import OvalDrawer from './OvalDrawer'
 import TriangleDrawer from './TriangleDrawer'
 import PolylineDrawer from './PolylineDrawer'
-import HistoryManager from './HistoryManager'
 import Copier from './Copier'
 import ShortcutManager, { type ShortcutAction } from './ShortcutManager'
 
@@ -17,9 +16,6 @@ class DrawingEditor {
   canvas: fabric.Canvas
 
   readonly drawerOptions: fabric.IObjectOptions = {}
-
-  // 操作历史
-  readonly history: HistoryManager
 
   private _drawer?: Drawer
 
@@ -74,7 +70,6 @@ class DrawingEditor {
     })
 
     this.canvas = markRaw(canvasObject)
-    this.history = new HistoryManager(this.canvas)
 
     // set default drawer
     this._drawer = this.drawers[DrawingMode.Rectangle]
@@ -94,13 +89,9 @@ class DrawingEditor {
     this.initializeShortcutEvents()
   }
 
-  undo() {
-    this.history.undo()
-  }
+  undo() {}
 
-  redo() {
-    this.history.redo()
-  }
+  redo() {}
 
   deleteCurrent() {
     const obj = this.canvas.getActiveObject()
@@ -131,9 +122,7 @@ class DrawingEditor {
     })
   }
 
-  private saveState() {
-    this.history.saveState()
-  }
+  private saveState() {}
 
   /**
    * 初始化 canvas 事件
@@ -158,8 +147,6 @@ class DrawingEditor {
         this.saveState()
       }
     })
-    //
-    this.canvas.on('mouse:out', () => {})
     // 对象选中事件
     // v4 break change - remove object:selected event
     this.canvas.on('selection:created', (event) => {
@@ -239,10 +226,6 @@ class DrawingEditor {
   private async make(x: number, y: number): Promise<fabric.Object | undefined> {
     if (!this._drawer) return
     return await this._drawer.make(x, y, this.drawerOptions)
-  }
-
-  private mouseWheel(x: number, y: number, delta: number) {
-    console.log('mouseWheel', x, y, delta)
   }
 }
 

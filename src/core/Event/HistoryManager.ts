@@ -1,5 +1,5 @@
 import { fabric } from 'fabric'
-import { PROPERTIES_TO_INCLUDE } from './types'
+import { PROPERTIES_TO_INCLUDE } from '../types'
 
 /**
  * 操作记录管理
@@ -18,7 +18,6 @@ class HistoryManager {
   constructor(readonly canvas: fabric.Canvas) {
     this.undoStack = []
     this.redoStack = []
-    this.updateState()
   }
 
   saveState() {
@@ -47,25 +46,22 @@ class HistoryManager {
 
     const newState = outStack.pop()
     if (!newState) return
-    // 保存新状态
-    this.currentState = newState
+    this.currentState = newState // 保存新状态
 
     this.locked = true
-
-    this.canvas.clear()
+    // this.canvas.clear()
     // 加载新状态
     this.canvas.loadFromJSON(this.currentState, () => {
       if (callback !== undefined) {
         callback()
       }
-      this.canvas.renderAll()
+      this.canvas.requestRenderAll()
       this.locked = false
     })
   }
 
   private updateState() {
-    console.log('updateState', this.canvas.toDatalessJSON(PROPERTIES_TO_INCLUDE))
-    this.currentState = JSON.stringify(this.canvas.toDatalessJSON(PROPERTIES_TO_INCLUDE))
+    this.currentState = JSON.stringify(this.canvas.toJSON(PROPERTIES_TO_INCLUDE))
   }
 }
 

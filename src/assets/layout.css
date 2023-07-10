@@ -1,23 +1,7 @@
-.common-header {
-  position: sticky;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  top: 0;
-  padding: 0 1.5rem;
-  width: 100%;
-  height: var(--header-height);
-  background: var(--color-background);
-}
-
-.common-header nav a {
-  color: var(--color-text);
-}
-
-.common-header nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
 .fill {
   height: 100vh;
+}
+
+#workspace {
+  height: calc(100vh - var(--toolbar-height));
 }
