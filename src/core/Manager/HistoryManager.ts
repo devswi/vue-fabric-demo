@@ -1,4 +1,5 @@
 import { fabric } from 'fabric'
+import { PROPERTIES_TO_INCLUDE } from '../types'
 
 /**
  * 操作记录管理
@@ -15,6 +16,11 @@ class HistoryManager {
   private maxCount = 100
 
   constructor(readonly canvas: fabric.Canvas) {
+    this.undoStack = []
+    this.redoStack = []
+  }
+
+  reset() {
     this.undoStack = []
     this.redoStack = []
     this.updateState()
@@ -40,30 +46,28 @@ class HistoryManager {
     this.replay(this.undoStack, this.redoStack, callback)
   }
 
-  private replay(inStack: string[], outStack: string[], callback?: Function) {
+  private replay(input: string[], output: string[], callback?: Function) {
     // 当前状态入栈
-    inStack.push(this.currentState)
+    input.push(this.currentState)
 
-    const newState = outStack.pop()
+    const newState = output.pop()
     if (!newState) return
-    // 保存新状态
-    this.currentState = newState
+    this.currentState = newState // 保存新状态
 
     this.locked = true
-
-    this.canvas.clear()
     // 加载新状态
     this.canvas.loadFromJSON(this.currentState, () => {
       if (callback !== undefined) {
         callback()
       }
-      this.canvas.renderAll()
+      this.canvas.requestRenderAll()
       this.locked = false
     })
   }
 
   private updateState() {
-    this.currentState = JSON.stringify(this.canvas.toDatalessJSON(['selectionBackgroundColor']))
+    const json = this.canvas.toDatalessJSON(PROPERTIES_TO_INCLUDE)
+    this.currentState = JSON.stringify(json)
   }
 }
 

@@ -1,32 +1,7 @@
-.common-header {
-  position: sticky;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  top: 0;
-  padding: 0 1.5rem;
-  width: 100%;
-  height: var(--header-height);
-  background: var(--color-background);
-}
-
-.common-header nav a {
-  color: var(--color-text);
-}
-
-.common-header nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-.common-section {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-main {
-  padding: 0 1.5rem;
-}
-
 .fill {
-  height: calc(100vh - var(--header-height));
+  height: 100vh;
+}
+
+#workspace {
+  height: calc(100vh - var(--toolbar-height));
 }

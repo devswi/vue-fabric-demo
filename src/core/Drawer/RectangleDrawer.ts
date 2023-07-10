@@ -1,12 +1,12 @@
 import { fabric } from 'fabric'
-import { DrawingMode } from './Drawer'
-import type { Drawer } from './Drawer'
+import type { Drawer } from './Base'
+import { DrawingMode } from './Base'
 
 class RectangleDrawer implements Drawer {
   drawing = DrawingMode.Rectangle
 
-  private originX: number = 0
-  private originY: number = 0
+  private originX = 0
+  private originY = 0
 
   // eslint-disable-next-line max-params
   make(
@@ -26,7 +26,6 @@ class RectangleDrawer implements Drawer {
         width,
         height,
         fill: 'transparent',
-        selectionBackgroundColor: 'rgba(59, 130, 246, 0.3)',
         ...options,
       })
       resolve(rect)
