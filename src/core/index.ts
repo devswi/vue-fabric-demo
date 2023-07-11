@@ -17,6 +17,8 @@ class Editor {
   canvas: fabric.Canvas
   workspace: Workspace | null = null
 
+  private workspaceEl: HTMLElement
+
   // 当前绘制对象
   private object?: fabric.Object
 
@@ -24,8 +26,6 @@ class Editor {
   private state = EditorState.Selected
 
   private dragEvent: DragEvent
-
-  private workspaceEl: HTMLElement
 
   private _drawer?: Drawer
 
@@ -57,6 +57,8 @@ class Editor {
     const canvasEl = document.createElement('canvas')
     canvasEl.id = selector
     canvas.replaceWith(canvasEl)
+
+    this.initializeConfs()
 
     const _canvas = new fabric.Canvas(selector, {
       fireRightClick: false,
@@ -109,7 +111,6 @@ class Editor {
           hoverCursor: 'default',
           id: ANNOTATION_ID,
         })
-
         this.canvas.add(img)
         this.workspace = workspace
         this.workspace.auto()
@@ -158,6 +159,7 @@ class Editor {
       this.canvas.remove(...obj)
       this.canvas.discardActiveObject()
       this.canvas.renderAll()
+      this.saveState()
     }
   }
 
@@ -171,6 +173,29 @@ class Editor {
     } = this
     this.canvas.setWidth(width)
     this.canvas.setHeight(height)
+  }
+
+  private initializeConfs() {
+    // 基础配置
+    // 禁用旋转
+    fabric.Object.prototype.controls.mtr.visible = false
+    // 禁用 skew 歪斜形变
+    fabric.Object.prototype.lockSkewingX = true
+    fabric.Object.prototype.lockSkewingY = true
+
+    // 移动时不改变选中边框透明度
+    fabric.Object.prototype.set({
+      transparentCorners: false,
+      cornerSize: 10,
+      cornerColor: 'white',
+      cornerStrokeColor: '#c0c0c0',
+      borderScaleFactor: 1,
+      borderOpacityWhenMoving: 1,
+    })
+
+    fabric.Rect.prototype.set({
+      cornerStyle: 'circle',
+    })
   }
 
   private initializeListenerEvent() {
@@ -205,8 +230,6 @@ class Editor {
     this.canvas.on('mouse:up', (opt) => {
       this.mouseUp(opt.e)
     })
-
-    this.canvas.on('object:added', (_opt) => {})
 
     this.canvas.on('selection:created', () => {
       this.state = EditorState.Selected

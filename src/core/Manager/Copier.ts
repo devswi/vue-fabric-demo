@@ -11,11 +11,6 @@ class Copier {
     const activeObject = this.editor.canvas.getActiveObject()
     activeObject?.clone((object: fabric.Object) => {
       this.memorizedObject = object
-      const { left = 0, top = 0 } = object
-      object.set({
-        left: left + 15,
-        top: top + 15,
-      })
       callback?.()
     }, PROPERTIES_TO_INCLUDE)
   }
@@ -26,10 +21,26 @@ class Copier {
 
   paste() {
     this.memorizedObject?.clone((clonedObject: fabric.Object) => {
-      this.editor.canvas.add(clonedObject)
+      this.editor.canvas.discardActiveObject()
+      const { left = 0, top = 0 } = clonedObject
+      clonedObject.set({
+        left: left + 15,
+        top: top + 15,
+        evented: true,
+      })
+      if (clonedObject.type === 'activeSelection') {
+        clonedObject.canvas = this.editor.canvas
+        const group = clonedObject as fabric.Group
+        group.forEachObject((obj: fabric.Object) => {
+          this.editor.canvas.add(obj)
+        })
+        group.setCoords()
+      } else {
+        this.editor.canvas.add(clonedObject)
+      }
       this.editor.canvas.setActiveObject(clonedObject)
+      this.editor.canvas.requestRenderAll()
       this.editor.saveState()
-      this.editor.canvas.renderAll()
       this.memorizedObject = null
     }, PROPERTIES_TO_INCLUDE)
   }

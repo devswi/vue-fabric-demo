@@ -9,8 +9,21 @@ import 'element-plus/dist/index.css'
 
 import 'virtual:uno.css'
 
+import { library } from '@fortawesome/fontawesome-svg-core'
+import {
+  faArrowPointer,
+  faReply,
+  faShare,
+  faSquare,
+  faCircle,
+  faPlay,
+  faDrawPolygon,
+} from '@fortawesome/free-solid-svg-icons'
+
 import App from './App.vue'
 import router from './router'
+
+library.add(faArrowPointer, faReply, faShare, faSquare, faCircle, faPlay, faDrawPolygon)
 
 const app = createApp(App)
 
